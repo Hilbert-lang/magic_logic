@@ -7,14 +7,22 @@
 # => true
 # は
 
-# Atom.def!(:P, 1)
-# Universal.def!(Disjunction.new(
-#                 Negative.new(Atom.new(:P, nil))),
-#                 Negative.new(Atom.new(:Q, nil)))
-#               )
-# )
-# と同等
+Atm.new(:P, 1).def!
+A.new(OR.new(
+       Ng.new(Atm.new(:P, nil)),
+       Ng.new(Atm.new(:Q, nil))
+     )
+).def!
 
+Atm.new(:Q, 1).eval!
+
+
+Atm.def!(:P, :x)
+Atm.def!(:Q, :y)
+OR.new(
+  Ng.new(Atm.new(:P, :x)),
+  Ng.new(Atm.new(:Q, :y))
+).eval!
 
 
 module World
@@ -26,24 +34,35 @@ $world = World::Entity
 
 module World
   class Entity
-    @@truth = %i(atom negative disjunction conjunction universal).reduce({}) do |hash, k|
+    @@truth = %i(atoms negatives disjunctions conjunctions universals).reduce({}) do |hash, k|
       hash[k] = []
       hash
     end
     class << self
       def <<(logic)
         case logic
-        when Atom        then @@truth[:atoms]        << logic
-        when Negative    then @@truth[:negative]     << logic
-        when Disjunction then @@truth[:disjunction]  << logic
-        when Conjunction then @@truth[:conjunction]  << logic
-        when Universal   then @@truth[:universal]    << logic
+        when Atom        then @@truth[:atoms]         << logic
+        when Negative    then @@truth[:negatives]     << logic
+        when Disjunction then @@truth[:disjunctions]  << logic
+        when Conjunction then @@truth[:conjunctions]  << logic
+        when Universal   then @@truth[:universals]    << logic
         end
       end
 
       # Accesor
       def truth
         @@truth
+      end
+
+      def atoms
+        @@truth[:atoms]
+      end
+
+      def reset
+        @@truth = %i(atoms negatives disjunctions conjunctions universals).reduce({}) do |hash, k|
+          hash[k] = []
+          hash
+        end
       end
     end
   end
@@ -56,90 +75,91 @@ end
 # Atom.def!(:P, 1)
 class Atom < Logic
   attr_accessor :pred, :term
-  class << self
-    def def!(pred, term)
-      $world << new(pred, term)
-    end
-  end
+
   def initialize(pred, term)
     @pred, @term = pred, term
   end
 
+  def def!
+    $world << self
+  end
+
   def eval!
-    $world
+    !!$world.atoms.find { |atom| atom.pred == @pred && atom.term ==  @term }
   end
 end
+Atm = Atom
 
 # ∀ 全称論理
 # ∀x P(x) は
 # Universal.def!(Atom.new(:P, 1))
 class Universal < Logic
   attr_accessor :logic
-  class << self
-    def def!(logic)
-      $world << new(logic)
-    end
-  end
 
   def initialize(logic)
     @logic = logic
   end
 
+  def def!
+    $world << self
+  end
+
   def eval!
   end
 end
+A = Universal
 
 
 # 否定
 class Negative < Logic
   attr_accessor :logic
 
-  class << self
-    def def!(logic)
-      $world << new(logic)
-    end
-  end
-
   def initialize(logic)
     @logic = logic
   end
 
+  def def!
+    $world << self
+  end
+
   def eval!
+    !logic.eval!
   end
 end
+Ng = Negative
 
 # 論理和
 class Disjunction < Logic
   attr_accessor :logic1, :logic2
 
-  class << self
-    def def!(logic1, logic2)
-      $world << new(logic1, logic2)
-    end
-  end
-
   def initialize(logic1, logic2)
     @logic1, @logic2 = logic1, logic2
   end
 
+  def def!
+    $world << self
+  end
+
   def eval!
+    logic1.eval! || logic2.eval!
   end
 end
+OR = Disjunction
 
 # 論理積
 class Conjunction < Logic
   attr_accessor :logic1, :logic2
 
-  class << self
-    def def!(logic1, logic2)
-      $world << new(logic1, logic2)
-    end
-  end
-
   def initialize(logic1, logic2)
     @logic1, @logic2 = logic1, logic2
   end
 
+  def def!
+    $world << self
+  end
+
   def eval!
+    logic1.eval! && logic2.eval!
   end
 end
+AND = Conjunction
