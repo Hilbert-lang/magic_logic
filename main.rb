@@ -1,3 +1,22 @@
+#!/bin/env ruby
+# encoding: utf-8
+
+# P(1)
+# ∀x ¬P(x) or Q(x)
+# Q(1)
+# => true
+# は
+
+# Atom.def!(:P, 1)
+# Universal.def!(Disjunction.new(
+#                 Negative.new(Atom.new(:P, nil))),
+#                 Negative.new(Atom.new(:Q, nil)))
+#               )
+# )
+# と同等
+
+
+
 module World
   class Entity
   end
@@ -30,7 +49,11 @@ module World
   end
 end
 
+class Logic
+end
 
+# P(1)　原子論理式
+# Atom.def!(:P, 1)
 class Atom < Logic
   attr_accessor :pred, :term
   class << self
@@ -47,6 +70,9 @@ class Atom < Logic
   end
 end
 
+# ∀ 全称論理
+# ∀x P(x) は
+# Universal.def!(Atom.new(:P, 1))
 class Universal < Logic
   attr_accessor :logic
   class << self
@@ -63,6 +89,8 @@ class Universal < Logic
   end
 end
 
+
+# 否定
 class Negative < Logic
   attr_accessor :logic
 
@@ -80,6 +108,7 @@ class Negative < Logic
   end
 end
 
+# 論理和
 class Disjunction < Logic
   attr_accessor :logic1, :logic2
 
@@ -97,6 +126,7 @@ class Disjunction < Logic
   end
 end
 
+# 論理積
 class Conjunction < Logic
   attr_accessor :logic1, :logic2
 
