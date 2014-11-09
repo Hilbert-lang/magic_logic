@@ -59,6 +59,10 @@ module World
         @@truth[:atoms]
       end
 
+      def ngs
+        @@truth[:ngs]
+      end
+
       def reset
         @@truth = %i(atoms negatives disjunctions conjunctions universals).reduce({}) do |hash, k|
           hash[k] = []
@@ -92,30 +96,11 @@ class Atom < Logic
   end
 
   def eval!
-    $world.atoms.find { |atom| atom.pred == @pred }.term == @term rescue nil
+    $world.atoms.find { |atom| atom.pred == @pred && term == @term } rescue nil
+    !$world.ngs.find { |atom| atom.pred == @pred }.term == @term rescue nil
   end
 end
 Atm = Atom
-
-# ∀ 全称論理
-# ∀x P(x) は
-# Universal.def!(Atom.new(:P, 1))
-class Universal < Logic
-  attr_accessor :logic
-
-  def initialize(logic)
-    @logic = logic
-  end
-
-  def def!
-    $world << self
-  end
-
-  def eval!
-  end
-end
-A = Universal
-
 
 # 否定
 class Negative < Logic
