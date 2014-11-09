@@ -13,6 +13,8 @@
 #                 Negative.new(Atom.new(:Q, nil)))
 #               )
 # )
+# Atom.eval!(:Q, nil)
+# => true
 # と同等
 
 
