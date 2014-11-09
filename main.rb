@@ -7,22 +7,19 @@
 # => true
 # は
 
-Atm.new(:P, 1).def!
-A.new(OR.new(
-       Ng.new(Atm.new(:P, nil)),
-       Ng.new(Atm.new(:Q, nil))
-     )
+Ng.new(Atm.new(:P, 1)).def!
+OR.new(
+  Atm.new(:P, 1),
+  Atm.new(:Q, 1)
 ).def!
 
+
+Atm.new(:P, 1).def!
+Atm.new(:P, 1).eval!
+Ng.new(Atm.new(:P, 1)).eval!
+
+
 Atm.new(:Q, 1).eval!
-
-
-Atm.def!(:P, :x)
-Atm.def!(:Q, :y)
-OR.new(
-  Ng.new(Atm.new(:P, :x)),
-  Ng.new(Atm.new(:Q, :y))
-).eval!
 
 
 module World
@@ -44,7 +41,11 @@ module World
         when Atom        then @@truth[:atoms]         << logic
         when Negative    then @@truth[:negatives]     << logic
         when Disjunction then @@truth[:disjunctions]  << logic
-        when Conjunction then @@truth[:conjunctions]  << logic
+        when Conjunction
+          if logic.logic1.true? && logic.logic2.false?
+            @@truth[:conjunctions]  << logic
+          else
+          end
         when Universal   then @@truth[:universals]    << logic
         end
       end
@@ -69,6 +70,12 @@ module World
 end
 
 class Logic
+  def false?
+    eval!.eql?(false)
+  end
+  def true?
+    eval!.eql?(true)
+  end
 end
 
 # P(1)　原子論理式
@@ -85,7 +92,7 @@ class Atom < Logic
   end
 
   def eval!
-    !!$world.atoms.find { |atom| atom.pred == @pred && atom.term ==  @term }
+    $world.atoms.find { |atom| atom.pred == @pred }.term == @term rescue nil
   end
 end
 Atm = Atom
