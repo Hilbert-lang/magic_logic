@@ -3,10 +3,6 @@ require 'minitest/unit'
 require 'pry'
 
 module Base
-  def ~@
-    NEG.new(self)
-  end
-
   def neg?(p)
     (is_a?(NEG) && self.p == p) ||
     (p.is_a?(NEG) && p.p == self)
@@ -16,16 +12,30 @@ module Base
     is_a?(NEG)
   end
 
+  def is_for?(ope)
+    is_a?(FOR) && @ope == ope
+  end
+
   def is_or?
-    is_a?(FOR) && @ope == :+
+    is_for?(:+)
   end
 
   def is_and?
-    is_a?(FOR) && @ope == :*
+    is_for?(:*)
   end
 
   def include?(p)
     false
+  end
+
+  def ~@
+    if is_neg?
+      p
+    elsif is_a?(FOR)
+      vars.map{|a|~a}.inject(reope)
+    else
+      NEG.new(self)
+    end
   end
 
   def *(q)
@@ -40,7 +50,7 @@ module Base
       if q.neg?(self)
         $utout
       else
-        FOR.new(self, q, :*)
+        FOR.new([self, q], :*)
       end
     end
   end
@@ -57,7 +67,7 @@ module Base
       if q.neg?(self)
         $tout
       else
-        FOR.new(self, q, :+)
+        FOR.new([self, q], :+)
       end
     end
   end
@@ -119,9 +129,7 @@ def _(p)
   if atom = $atoms.find{|a|a.p == p}
     atom
   else
-    atom = Atom.new(p)
-    $atoms << atom
-    atom
+    Atom.new(p).tap { |a|$atoms << a }
   end
 end
 
@@ -131,13 +139,8 @@ class Atom
   def initialize(p); @p = p;  end
   def to_s;          @p.to_s; end
   def !@;            self;    end
+  def deep;          1;       end
 end
-
-# if p.is_neg?
-#     elsif p.is_or?
-#     elsif p.is_or?
-#     elsif p.is_and?
-
 
 class NEG
   include Base
@@ -145,33 +148,67 @@ class NEG
   def initialize(p); @p = p;       end
   def to_s;          "~#{@p}";     end
   def !@
-    if p.is_neg?
-      !p.p
-    elsif p.is_or?
-      ~(!p.p) * ~(!p.q)
-    elsif p.is_and?
-      ~(!p.p) + ~(!p.q)
-    else
-      ~(!p)
-    end
+    ~(!p)
   end
+  def deep;          p.deep+1;     end
 end
 
 
 class FOR
   include Base
-  attr_accessor :p, :q, :ope
-  def initialize(p, q, ope); @p, @q, @ope = p, q, ope; end
+  attr_accessor :vars, :ope
+  def initialize(vars, ope)
+    same_forms = vars.select { |var| var.is_for?(ope) }
+    # Fix it
+    unless same_forms.empty?
+      no_same_forms = vars.reject { |var| var.is_for?(ope) }
+      vars = no_same_forms + same_forms.map(&:vars).flatten
+    end
+
+    @vars, @ope = vars, ope
+  end
+
+  def p
+    vars[0]
+  end
+
+  def q
+    vars[1]
+  end
 
   def include?(p)
-    @p == p || @q == p
+    vars.include?(p)
   end
 
-  def to_s; "(#{@p}#{@ope == :* ? '&' : '|'}#{@q})"; end
+  def to_s
+    str = vars.each.with_index.inject('(') do |str, (p, i)|
+      str += "#{p}#{i < vars.count-1 ? loope : ')'}"
+      str
+    end
+  end
+
+  def loope
+    @ope == :* ? '&' : '|'
+  end
+
+  def reope
+    is_and? ? :+ : :*
+  end
 
   def !@
-    (!@p).send(@ope, !@q)
+    if is_or?
+      if    p.is_and?
+        (p.p + q) * (p.q + q)
+      elsif q.is_and?
+        (p + q.p) * (p + q.q)
+      else
+        vars.map{|a|!a}.inject(@ope)
+      end
+    else
+      vars.map{|a|!a}.inject(@ope)
+    end
   end
+  def deep;          [p.deep, q.deep].max+1;     end
 end
 
 
@@ -181,9 +218,10 @@ class TestArray < MiniTest::Unit::TestCase
   def setup
     $p = _(:P)
     $q = _(:Q)
+    $r = _(:R)
   end
   def assert_to_s(exp, obj)
-    assert_equal(exp, ((!obj).to_s))
+    assert_equal(exp, ((!!obj).to_s))
   end
 
   def test_utils
@@ -211,21 +249,24 @@ class TestArray < MiniTest::Unit::TestCase
     assert_to_s("FALSE", ~$p * $p)
   end
 
-  def test_normal_form
+  def test_basis
     assert_to_s("P", $p)
     assert_to_s("(P|Q)", $p + $q)
-    assert_to_s("(P|Q)", $p + $q)
-    # assert_to_s("(~P|Q)", _(:P) >= _(:Q))
-    # assert_to_s("((~P|Q)&(~Q|P))", _(:P) <=> _(:Q))
-    # assert_to_s("P", ~(~_(:P)))
-    # assert_to_s("(~P&~Q)", ~(_(:P) + _(:Q)))
-
-    # assert_to_s(
-    #   "((P|Q)&(P|R))",
-    #   (
-    #     _(:P) +
-    #     (_(:Q) * _(:R))
-    #   )
-    # )
+    assert_to_s("(P&Q)", $p * $q)
+    assert_to_s("~P", ~$p)
+    assert_to_s("(~P|Q)", $p >= $q)
+    assert_to_s("((~P|Q)&(~Q|P))", $p <=> $q)
   end
+
+  def test_normal
+    assert_to_s("(~P&~Q)", ~($p + $q))
+    assert_to_s("(~P|~Q)", ~($p * $q))
+    assert_to_s("P", ~(~$p))
+    assert_to_s("((P|Q)&(P|R))", $p + ($q * $r))
+    assert_to_s("(Q&R&P)", $p * ($q * $r))
+    assert_to_s("(P&(~P|Q))", $p * ($p >= $q))
+    assert_to_s("true", ($p * ($p >= $q)) => $q)
+    assert_to_s("true", (($p >= $q) * ($q >= $r)) >= ($p >= $r))
+  end
+
 end
