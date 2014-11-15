@@ -1,25 +1,13 @@
 #!/bin/env ruby
 # encoding: utf-8
 
-# P(1)
-# ∀x ¬P(x) or Q(x)
-# Q(1)
-# => true
-# は
-
-Ng.new(Atm.new(:P, 1)).def!
-OR.new(
-  Atm.new(:P, 1),
-  Atm.new(:Q, 1)
-).def!
 
 
-Atm.new(:P, 1).def!
-Atm.new(:P, 1).eval!
-Ng.new(Atm.new(:P, 1)).eval!
+$world = []
 
 
-Atm.new(:Q, 1).eval!
+
+
 
 
 module World
