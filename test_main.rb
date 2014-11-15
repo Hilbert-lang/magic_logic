@@ -236,6 +236,7 @@ class TestArray < MiniTest::Unit::TestCase
     assert_to_s("TRUE", (($p >= $q) * ($q >= $r)) >= ($p >= $r))
     assert_to_s("TRUE", (~$p * ($p + $q)) >= ($q))
     assert_to_s("TRUE", (($p >= $q) * ($q >= $r) * $p) >= ($r))
+    assert_to_s("TRUE", ($p * ~$p) >= $r)
   end
 
   def test_no_tautology
