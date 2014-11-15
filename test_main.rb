@@ -158,13 +158,7 @@ class FOR
   include Base
   attr_accessor :vars, :ope
   def initialize(vars, ope)
-    same_forms = vars.select { |var| var.is_for?(ope) }
-    # Fix it
-    unless same_forms.empty?
-      no_same_forms = vars.reject { |var| var.is_for?(ope) }
-      vars = no_same_forms + same_forms.map(&:vars).flatten
-    end
-
+    vars = vars.map { |var| var.is_for?(ope) ? var.vars : var }.flatten
     @vars, @ope = vars, ope
   end
 
@@ -182,7 +176,7 @@ class FOR
 
   def to_s
     str = vars.each.with_index.inject('(') do |str, (p, i)|
-      str += "#{p}#{i < vars.count-1 ? loope : ')'}"
+      str = str + "#{p}#{i < vars.count-1 ? loope : ')'}"
       str
     end
   end
@@ -195,12 +189,24 @@ class FOR
     is_and? ? :+ : :*
   end
 
+  def are_there_same?
+
+  end
+
+  def are_there_neg?
+    pvars = vars.reject { |var| var.is_neg? }
+    nvars = vars.select { |var| var.is_neg? }
+    pvars.any? { |pvar|
+      nvars.any? { |nvar| nvar.neg?(pvar) }
+    }
+  end
+
   def !@
     if is_or?
-      if    p.is_and?
-        (p.p + q) * (p.q + q)
-      elsif q.is_and?
-        (p + q.p) * (p + q.q)
+      if and_form = vars.find { |var| var.is_and? }
+        and_form.vars.map { |a| a + FOR.new(vars - [and_form], :+) }.inject(:*)
+      elsif are_there_neg?
+        $tout
       else
         vars.map{|a|!a}.inject(@ope)
       end
@@ -221,7 +227,7 @@ class TestArray < MiniTest::Unit::TestCase
     $r = _(:R)
   end
   def assert_to_s(exp, obj)
-    assert_equal(exp, ((!!obj).to_s))
+    assert_equal(exp, ((!!!!!!!obj).to_s))
   end
 
   def test_utils
@@ -263,10 +269,9 @@ class TestArray < MiniTest::Unit::TestCase
     assert_to_s("(~P|~Q)", ~($p * $q))
     assert_to_s("P", ~(~$p))
     assert_to_s("((P|Q)&(P|R))", $p + ($q * $r))
-    assert_to_s("(Q&R&P)", $p * ($q * $r))
+    assert_to_s("(P&Q&R)", $p * ($q * $r))
     assert_to_s("(P&(~P|Q))", $p * ($p >= $q))
-    assert_to_s("true", ($p * ($p >= $q)) => $q)
-    assert_to_s("true", (($p >= $q) * ($q >= $r)) >= ($p >= $r))
+    assert_to_s("TRUE", ($p * ($p >= $q)) >= $q)
+    assert_to_s("TRUE", (($p >= $q) * ($q >= $r)) >= ($p >= $r))
   end
-
 end
