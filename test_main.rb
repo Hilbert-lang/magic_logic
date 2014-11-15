@@ -4,9 +4,9 @@ require 'pry'
 
 module Operator
   def ~@
-    if    is_neg?    then p
-    elsif is_a?(FOR) then vars.map { |a|~a }.inject(reope)
-    else                  NEG.new(self)
+    if    is_neg?  then p
+    elsif is_form? then vars.map { |a|~a }.inject(reope)
+    else                NEG.new(self)
     end
   end
 
@@ -16,10 +16,8 @@ module Operator
     when UTaut then $utout
     when self  then self
     else
-      if q.neg?(self)
-        $utout
-      else
-        FOR.new([self, q], :*)
+      if neg?(q) then $utout
+      else            and_([self, q])
       end
     end
   end
@@ -30,10 +28,8 @@ module Operator
     when UTaut then self
     when self  then self
     else
-      if q.neg?(self)
-        $tout
-      else
-        FOR.new([self, q], :+)
+      if neg?(q) then $tout
+      else            or_([self, q])
       end
     end
   end
@@ -57,16 +53,17 @@ module Utils
     is_a?(NEG)
   end
 
-  def is_for?(ope)
-    is_a?(FOR) && @ope == ope
+  def is_form?(ope=true)
+    return is_a?(FORM) if ope === true
+    is_a?(FORM) && @ope == ope
   end
 
   def is_or?
-    is_for?(:+)
+    is_form?(:+)
   end
 
   def is_and?
-    is_for?(:*)
+    is_form?(:*)
   end
 
   def include?(p)
@@ -76,6 +73,7 @@ end
 
 module Base; include Operator; include Utils end
 
+# Tautology
 class Taut
   include Base
   def ~@;   $utout end
@@ -84,7 +82,9 @@ class Taut
   def !@;   $tout  end
   def to_s; 'TRUE' end
 end
+$tout = Taut.new
 
+# Non Tautology
 class UTaut
   include Base
   def ~@;   $tout   end
@@ -93,18 +93,7 @@ class UTaut
   def !@;   $utout  end
   def to_s; 'FALSE' end
 end
-
-$tout = Taut.new
 $utout = UTaut.new
-
-$atoms = []
-def _(p)
-  if atom = $atoms.find{|a|a.p == p}
-    atom
-  else
-    Atom.new(p).tap { |a|$atoms << a }
-  end
-end
 
 class Atom
   include Base
@@ -113,6 +102,14 @@ class Atom
   def to_s;          @p.to_s end
   def !@;            self    end
   def deep;          1       end
+end
+$atoms = []
+def _(p)
+  if atom = $atoms.find { |a| a.p == p }
+    atom
+  else
+    Atom.new(p).tap { |a| $atoms << a }
+  end
 end
 
 class NEG
@@ -125,11 +122,11 @@ class NEG
 end
 
 
-class FOR
+class FORM
   include Base
   attr_accessor :vars, :ope
   def initialize(vars, ope)
-    vars = vars.map { |var| var.is_for?(ope) ? var.vars : var }.flatten
+    vars = vars.map { |var| var.is_form?(ope) ? var.vars : var }.flatten
     @vars, @ope = vars, ope
   end
 
@@ -152,10 +149,6 @@ class FOR
     is_and? ? :+ : :*
   end
 
-  def are_there_same?
-
-  end
-
   def are_there_neg?
     pvars = vars.reject { |var| var.is_neg? }
     nvars = vars.select { |var| var.is_neg? }
@@ -167,19 +160,22 @@ class FOR
   def !@
     if is_or?
       if and_form = vars.find { |var| var.is_and? }
-        and_form.vars.map { |a| a + FOR.new(vars - [and_form], :+) }.inject(:*)
+        and_form.vars.map { |a| a + or_(vars - [and_form]) }.inject(:*)
       elsif are_there_neg?
         $tout
       else
         vars.map{|a|!a}.inject(@ope)
       end
+    elsif is_and? && are_there_neg?
+      $utout
     else
       vars.map{|a|!a}.inject(@ope)
     end
   end
   def deep;          [p.deep, q.deep].max+1;     end
 end
-
+def or_(vars);  FORM.new(vars, :+) end
+def and_(vars); FORM.new(vars, :*) end
 
 
 class TestArray < MiniTest::Unit::TestCase
@@ -226,15 +222,23 @@ class TestArray < MiniTest::Unit::TestCase
     assert_to_s("((~P|Q)&(~Q|P))", $p <=> $q)
   end
 
-  def test_normal
+  def test_main
     assert_to_s("(~P&~Q)", ~($p + $q))
     assert_to_s("(~P|~Q)", ~($p * $q))
     assert_to_s("P", ~(~$p))
     assert_to_s("((Q|P)&(R|P))", $p + ($q * $r))
     assert_to_s("(P&Q&R)", $p * ($q * $r))
     assert_to_s("(P&(~P|Q))", $p * ($p >= $q))
+  end
+
+  def test_tautology
     assert_to_s("TRUE", ($p * ($p >= $q)) >= $q)
     assert_to_s("TRUE", (($p >= $q) * ($q >= $r)) >= ($p >= $r))
     assert_to_s("TRUE", (~$p * ($p + $q)) >= ($q))
+    assert_to_s("TRUE", (($p >= $q) * ($q >= $r) * $p) >= ($r))
+  end
+
+  def test_no_tautology
+    assert_to_s("FALSE", $p * $q * ~$p)
   end
 end
