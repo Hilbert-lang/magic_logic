@@ -2,7 +2,52 @@ require 'minitest/autorun'
 require 'minitest/unit'
 require 'pry'
 
-module Base
+module Operator
+  def ~@
+    if    is_neg?    then p
+    elsif is_a?(FOR) then vars.map { |a|~a }.inject(reope)
+    else                  NEG.new(self)
+    end
+  end
+
+  def *(q)
+    case q
+    when Taut  then self
+    when UTaut then $utout
+    when self  then self
+    else
+      if q.neg?(self)
+        $utout
+      else
+        FOR.new([self, q], :*)
+      end
+    end
+  end
+
+  def +(q)
+    case q
+    when Taut  then $tout
+    when UTaut then self
+    when self  then self
+    else
+      if q.neg?(self)
+        $tout
+      else
+        FOR.new([self, q], :+)
+      end
+    end
+  end
+
+  def >=(q)
+    (~self + q)
+  end
+
+  def <=>(q)
+    (self >= q) * (q >= self)
+  end
+end
+
+module Utils
   def neg?(p)
     (is_a?(NEG) && self.p == p) ||
     (p.is_a?(NEG) && p.p == self)
@@ -27,101 +72,29 @@ module Base
   def include?(p)
     false
   end
-
-  def ~@
-    if is_neg?
-      p
-    elsif is_a?(FOR)
-      vars.map{|a|~a}.inject(reope)
-    else
-      NEG.new(self)
-    end
-  end
-
-  def *(q)
-    case q
-    when Taut
-      self
-    when UTaut
-      $utout
-    when self
-      self
-    else
-      if q.neg?(self)
-        $utout
-      else
-        FOR.new([self, q], :*)
-      end
-    end
-  end
-
-  def +(q)
-    case q
-    when Taut
-      $tout
-    when UTaut
-      self
-    when self
-      self
-    else
-      if q.neg?(self)
-        $tout
-      else
-        FOR.new([self, q], :+)
-      end
-    end
-  end
-
-  def >=(q)
-    (~self + q)
-  end
-
-  def <=>(q)
-    (self >= q) * (q >= self)
-  end
 end
+
+module Base; include Operator; include Utils end
 
 class Taut
   include Base
-  def ~@
-    UTaut.new
-  end
-
-  def +(q)
-    self
-  end
-
-  def *(q)
-    q
-  end
-  def !@;            self;    end
-
-  def to_s
-    'TRUE'
-  end
+  def ~@;   $utout end
+  def +(q); $tout  end
+  def *(q); q      end
+  def !@;   $tout  end
+  def to_s; 'TRUE' end
 end
-
-$tout = Taut.new
 
 class UTaut
   include Base
-  def ~@
-    Taut.new
-  end
-
-  def +(q)
-    q
-  end
-
-  def *(q)
-    self
-  end
-  def !@;            self;    end
-  def to_s
-    'FALSE'
-  end
+  def ~@;   $tout   end
+  def +(q); q       end
+  def *(q); $utout  end
+  def !@;   $utout  end
+  def to_s; 'FALSE' end
 end
 
+$tout = Taut.new
 $utout = UTaut.new
 
 $atoms = []
@@ -136,21 +109,19 @@ end
 class Atom
   include Base
   attr_accessor :p
-  def initialize(p); @p = p;  end
-  def to_s;          @p.to_s; end
-  def !@;            self;    end
-  def deep;          1;       end
+  def initialize(p); @p = p  end
+  def to_s;          @p.to_s end
+  def !@;            self    end
+  def deep;          1       end
 end
 
 class NEG
   include Base
   attr_accessor :p
-  def initialize(p); @p = p;       end
-  def to_s;          "~#{@p}";     end
-  def !@
-    ~(!p)
-  end
-  def deep;          p.deep+1;     end
+  def initialize(p); @p = p     end
+  def to_s;          "~#{@p}"   end
+  def !@;             ~(!p)     end
+  def deep;          p.deep+1   end
 end
 
 
@@ -160,14 +131,6 @@ class FOR
   def initialize(vars, ope)
     vars = vars.map { |var| var.is_for?(ope) ? var.vars : var }.flatten
     @vars, @ope = vars, ope
-  end
-
-  def p
-    vars[0]
-  end
-
-  def q
-    vars[1]
   end
 
   def include?(p)
@@ -220,7 +183,6 @@ end
 
 
 class TestArray < MiniTest::Unit::TestCase
-
   def setup
     $p = _(:P)
     $q = _(:Q)
@@ -268,10 +230,11 @@ class TestArray < MiniTest::Unit::TestCase
     assert_to_s("(~P&~Q)", ~($p + $q))
     assert_to_s("(~P|~Q)", ~($p * $q))
     assert_to_s("P", ~(~$p))
-    assert_to_s("((P|Q)&(P|R))", $p + ($q * $r))
+    assert_to_s("((Q|P)&(R|P))", $p + ($q * $r))
     assert_to_s("(P&Q&R)", $p * ($q * $r))
     assert_to_s("(P&(~P|Q))", $p * ($p >= $q))
     assert_to_s("TRUE", ($p * ($p >= $q)) >= $q)
     assert_to_s("TRUE", (($p >= $q) * ($q >= $r)) >= ($p >= $r))
+    assert_to_s("TRUE", (~$p * ($p + $q)) >= ($q))
   end
 end
