@@ -1,6 +1,30 @@
 # MagicLogic
 
-TODO: Write a gem description
+```rb
+$p = Atom.new(:P)
+$q = Atom.new(:Q)
+$r = Atom.new(:R)
+
+~(~$p) >= $p
+# =>TRUE
+
+($p * ($p >= $q)) >= $q
+# =>TRUE
+
+(($p >= $q) * ($q >= $r)) >= ($p >= $r)
+# =>TRUE
+
+
+(~$p * ($p + $q)) >= ($q)
+# =>TRUE
+
+
+(($p >= $q) * ($q >= $r) * $p) >= ($r)
+# =>TRUE
+
+($p * ~$p) >= $r
+# =>TRUE
+```
 
 ## Installation
 
