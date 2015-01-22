@@ -1,9 +1,9 @@
 # MagicLogic
 
 ```rb
-p = Atom.new("If it's raining then it's cloudy.")
-q = Atom.new("It's raining.")
-r = Atom.new("It's cloudy.")
+p = P["If it's raining then it's cloudy."]
+q = P["It's raining."]
+r = P["It's cloudy."]
 
 ~(~p) >= p
 # =>TRUE

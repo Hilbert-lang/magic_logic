@@ -93,7 +93,12 @@ module MagicLogic
     def to_s;  p.to_s end
     def !@;    self   end
     def depth; 1      end
+
+    class << self
+      alias [] new
+    end
   end
+  P = Atom
 
   class NEG < Struct.new(:p)
     include Base

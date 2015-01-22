@@ -1,9 +1,9 @@
 require 'minitest_helper'
 include MagicLogic
 class TestMagicLogic < MiniTest::Unit::TestCase
-  $p = Atom.new(:P)
-  $q = Atom.new(:Q)
-  $r = Atom.new(:R)
+  $p = P['P']
+  $q = P['Q']
+  $r = P['R']
 
   def setup
 
