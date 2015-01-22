@@ -9,27 +9,18 @@ module MagicLogic
       end
     end
 
-    def *(q)
-      case q
-      when Taut  then self
-      when UTaut then $utout
-      when self  then self
-      else
-        if neg?(q) then $utout
-        else            FORM.new([self, q], :*)
+    %w|+ *|.each do |ope|
+      define_method(ope) do |q|
+        case q
+        when Taut  then _ ope, $tout, self
+        when UTaut then _ ope, self, $utout
+        when self  then self
+        else            neg?(q) ? ope == '+' ? $tout : $utout : FORM.new([self, q], ope.to_sym)
         end
       end
-    end
 
-    def +(q)
-      case q
-      when Taut  then $tout
-      when UTaut then self
-      when self  then self
-      else
-        if neg?(q) then $tout
-        else            FORM.new([self, q], :+)
-        end
+      def _ ope, r, l
+        ope == '+' ? r : l
       end
     end
 
@@ -99,16 +90,16 @@ module MagicLogic
 
   class Atom < Struct.new(:p)
     include Base
-    def to_s;          p.to_s      end
-    def !@;            self        end
-    def depth;         1           end
+    def to_s;  p.to_s end
+    def !@;    self   end
+    def depth; 1      end
   end
 
   class NEG < Struct.new(:p)
     include Base
-    def to_s;          "~#{p}"      end
-    def !@;             ~(!p)       end
-    def depth;          p.depth+1   end
+    def to_s;  "~#{p}"    end
+    def !@;     ~(!p)     end
+    def depth;  p.depth+1 end
   end
 
   class FORM
