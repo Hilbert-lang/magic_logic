@@ -1,28 +1,28 @@
 # MagicLogic
 
 ```rb
-$p = Atom.new(:P)
-$q = Atom.new(:Q)
-$r = Atom.new(:R)
+p = Atom.new("If it's raining then it's cloudy.")
+q = Atom.new("It's raining.")
+r = Atom.new("It's cloudy.")
 
-~(~$p) >= $p
+~(~p) >= p
 # =>TRUE
 
-($p * ($p >= $q)) >= $q
+(p * (p >= q)) >= q
 # =>TRUE
 
-(($p >= $q) * ($q >= $r)) >= ($p >= $r)
-# =>TRUE
-
-
-(~$p * ($p + $q)) >= ($q)
+((p >= q) * (q >= r)) >= (p >= r)
 # =>TRUE
 
 
-(($p >= $q) * ($q >= $r) * $p) >= ($r)
+(~p * (p + q)) >= (q)
 # =>TRUE
 
-($p * ~$p) >= $r
+
+((p >= q) * (q >= r) * p) >= (r)
+# =>TRUE
+
+(p * ~p) >= r
 # =>TRUE
 ```
 
