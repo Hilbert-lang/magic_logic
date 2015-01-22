@@ -2,11 +2,8 @@ require "magic_logic/version"
 
 module MagicLogic
   module Operator
-    def ~@
-      if    is_neg?  then p
-      elsif is_form? then vars.map(&:~).inject(reope)
-      else                NEG.new(self)
-      end
+    def _ ope, l, r
+      ope.to_s == '+' ? l : r
     end
 
     %w|+ *|.each do |ope|
@@ -15,12 +12,15 @@ module MagicLogic
         when Taut  then _ ope, $tout, self
         when UTaut then _ ope, self, $utout
         when self  then self
-        else            neg?(q) ? ope == '+' ? $tout : $utout : FORM.new([self, q], ope.to_sym)
+        else            neg?(q) ? (_ ope, $tout, $utout) : FORM.new([self, q], ope.to_sym)
         end
       end
+    end
 
-      def _ ope, r, l
-        ope == '+' ? r : l
+    def ~@
+      if    is_neg?  then p
+      elsif is_form? then vars.map(&:~).inject(_ ope, :*, :+)
+      else                NEG.new(self)
       end
     end
 
@@ -59,8 +59,8 @@ module MagicLogic
       false
     end
 
-    def dpll!
-      !!!!!!!!!!!!self
+    def dpll
+      !!!!!!!!!!!!!!self
     end
   end
 
@@ -110,7 +110,7 @@ module MagicLogic
       @ope = ope
     end
 
-    def to_s; "(#{vars.map(&:to_s).join(loope)})" end
+    def to_s; "(#{vars.map(&:to_s).join(_ ope, '|', '&')})" end
 
     def !@
       if is_or? && (and_form = vars.find { |var| var.is_and? })
@@ -126,14 +126,6 @@ module MagicLogic
 
     def include?(p)
       vars.include?(p)
-    end
-
-    def loope
-      ope == :* ? '&' : '|'
-    end
-
-    def reope
-      is_and? ? :+ : :*
     end
 
     private
