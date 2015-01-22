@@ -43,7 +43,7 @@ module MagicLogic
     end
 
     def is_form?(ope=nil)
-      return is_a?(FORM) && @ope == ope if ope
+      return is_a?(FORM) && self.ope == ope if ope
       is_a?(FORM)
     end
 
@@ -60,7 +60,7 @@ module MagicLogic
     end
 
     def dpll
-      !!!!!!!!!!!!!!self
+      !!!!!!!!!!!!!!!!!!self
     end
   end
 
@@ -107,12 +107,11 @@ module MagicLogic
     def depth;  p.depth+1 end
   end
 
-  class FORM
+  class FORM < Struct.new(:vars, :ope)
     include Base
-    attr_reader :vars, :ope
     def initialize(vars, ope)
-      @vars = vars.map { |var| var.is_form?(ope) ? var.vars : var }.flatten
-      @ope = ope
+      self.vars = vars.map { |var| var.is_form?(ope) ? var.vars : var }.flatten
+      self.ope = ope
     end
 
     def to_s; "(#{vars.map(&:to_s).join(_ ope, '|', '&')})" end
