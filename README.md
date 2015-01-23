@@ -1,5 +1,9 @@
 # MagicLogic
 
+[![Gem Version](https://badge.fury.io/rb/magic_logic.svg)](http://badge.fury.io/rb/magic_logic) [![Build Status](https://travis-ci.org/gogotanaka/MagicLogic.svg?branch=master)](https://travis-ci.org/gogotanaka/MagicLogic)
+
+
+
 ```rb
 p = P["It's sunny."]
 q = P["It's raining."]
