@@ -69,4 +69,9 @@ class TestMagicLogic < MiniTest::Unit::TestCase
     assert_to_s("FALSE", $p * $q * ~$p     )
     assert_to_s("FALSE", ~$p * (~$p >= $p) )
   end
+  #
+  # def test_hoo
+  #   assert_to_s("TRUE", [$p] >> $p)
+  #   assert_to_s("TRUE", [$p >= $q, $q >= $r] >> $p >= $r)
+  # end
 end

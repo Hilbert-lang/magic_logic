@@ -3,16 +3,25 @@ require "magic_logic/version"
 module MagicLogic
   module Operator
     def _ ope, l, r
-      ope.to_s == '+' ? l : r
+      ope == :+ ? l : r
     end
 
-    %w|+ *|.each do |ope|
+    [:+, :*].each do |ope|
       define_method(ope) do |q|
         case q
         when Taut  then _ ope, $tout, self
         when UTaut then _ ope, self, $utout
         when self  then self
-        else            neg?(q) ? (_ ope, $tout, $utout) : FORM.new([self, q], ope.to_sym)
+        else
+          if neg?(q)
+            (_ ope, $tout, $utout)
+          elsif is_form?(ope.to_sym) && include?(q)
+            self
+          elsif q.is_form?(ope) && q.include?(self)
+            q
+          else
+            FORM.new([self, q], ope)
+          end
         end
       end
     end
@@ -140,5 +149,11 @@ module MagicLogic
           nvars.any? { |nvar| nvar.neg?(pvar) }
         }
       end
+  end
+
+  class ::Array
+    def >>(con)
+      inject($tout) { |s, p| s * p } >= con
+    end
   end
 end

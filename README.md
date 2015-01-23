@@ -1,7 +1,7 @@
 # MagicLogic
 
 ```rb
-p = P["If it's raining then it's cloudy."]
+p = P["It's sunny."]
 q = P["It's raining."]
 r = P["It's cloudy."]
 
