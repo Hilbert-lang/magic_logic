@@ -99,8 +99,8 @@ module MagicLogic
           eval(s)
         end
         case rslt.uniq
-        when [false] then 'FALSE'
-        when [true]  then 'TRUE'
+        when [true]  then $tout
+        when [false] then $utout
         else              self
         end
       end
@@ -160,7 +160,13 @@ module MagicLogic
 
   class ::Array
     def >>(con)
-      inject($tout) { |s, p| s * p } >= con
+      l = inject($tout) { |s, p| s * p } >= con
+      case l.dpll
+      when Taut  then 'TRUE'
+      when UTaut then 'FALSE'
+      else            'UNDECIDABLE'
+      end
     end
   end
 end
+include MagicLogic
