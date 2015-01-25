@@ -81,8 +81,8 @@ module MagicLogic
     end
 
     class ::String
-      def sbst(num, bool)
-        gsub(/#{ATOM_PREFIX}#{num}/, bool.to_s)
+      def sbst!(num, bool)
+        gsub!(/#{ATOM_PREFIX}#{num}/, bool.to_s)
       end
     end
 
@@ -93,18 +93,15 @@ module MagicLogic
       else
         #TODO: refactor
         count = $atoms.count
-        rslt = []
-        (2 ** count).times do |i|
+        rslt = (1 .. 2 ** count).map do |i|
           s = evl
-          count.times { |j| s = s.sbst(j, (i >> j) & 1 == 1)  }
-          rslt << eval(s)
+          count.times { |j| s.sbst!(j, (i >> j) & 1 == 1)  }
+          eval(s)
         end
-        if rslt.all?{ |e| e === false }
-          'FALSE'
-        elsif rslt.all?{ |e| e === true }
-          'TRUE'
-        else
-          to_s
+        case rslt.uniq
+        when [false] then 'FALSE'
+        when [true]  then 'TRUE'
+        else              self
         end
       end
     end
@@ -157,20 +154,8 @@ module MagicLogic
       self.ope = ope
     end
 
-    def to_s; "(#{vars.map(&:to_s).join(_ ope, '|', '&')})" end
-
-    def include?(p)
-      vars.include?(p)
-    end
-
-    private
-      def are_there_neg?
-        pvars = vars.reject { |var| var.is_neg? }
-        nvars = vars.select { |var| var.is_neg? }
-        pvars.any? { |pvar|
-          nvars.any? { |nvar| nvar.neg?(pvar) }
-        }
-      end
+    def to_s;        "(#{vars.map(&:to_s).join(_ ope, '|', '&')})" end
+    def include?(p); vars.include?(p)                              end
   end
 
   class ::Array
