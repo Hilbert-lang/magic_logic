@@ -43,6 +43,8 @@ module MagicLogic
   end
 
   module Utils
+    ATOM_PREFIX = "__ATOM__PREFIX__"
+
     def neg?(p)
       (is_neg? && self.p == p) || (p.is_neg? && p.p == self)
     end
@@ -68,8 +70,43 @@ module MagicLogic
       false
     end
 
+    def evl
+      case self
+      when Taut  then "(true)"
+      when UTaut then "(false)"
+      when Atom  then "(#{ATOM_PREFIX}#{$atoms.index(self)})"
+      when FORM  then "(#{vars.map(&:evl).join(_ ope, '||', '&&')})"
+      when NEG   then "(!#{p.evl})"
+      end
+    end
+
+    class ::String
+      def sbst(num, bool)
+        gsub(/#{ATOM_PREFIX}#{num}/, bool.to_s)
+      end
+    end
+
     def dpll
-      !!!!!!!!!!!!!!!!!!self
+      case self
+      when *[Taut, UTaut, Atom]
+        self
+      else
+        #TODO: refactor
+        count = $atoms.count
+        rslt = []
+        (2 ** count).times do |i|
+          s = evl
+          count.times { |j| s = s.sbst(j, (i >> j) & 1 == 1)  }
+          rslt << eval(s)
+        end
+        if rslt.all?{ |e| e === false }
+          'FALSE'
+        elsif rslt.all?{ |e| e === true }
+          'TRUE'
+        else
+          to_s
+        end
+      end
     end
   end
 
@@ -81,7 +118,6 @@ module MagicLogic
     def ~@;   $utout end
     def +(q); $tout  end
     def *(q); q      end
-    def !@;   $tout  end
     def to_s; 'TRUE' end
   end
   $tout = Taut.new
@@ -92,7 +128,6 @@ module MagicLogic
     def ~@;   $tout   end
     def +(q); q       end
     def *(q); $utout  end
-    def !@;   $utout  end
     def to_s; 'FALSE' end
   end
   $utout = UTaut.new
@@ -100,20 +135,19 @@ module MagicLogic
   class Atom < Struct.new(:p)
     include Base
     def to_s;  p.to_s end
-    def !@;    self   end
-    def depth; 1      end
 
     class << self
-      alias [] new
+      def [](x)
+        new(x).tap { |p| $atoms << p; $atoms.uniq! }
+      end
     end
   end
   P = Atom
+  $atoms = []
 
   class NEG < Struct.new(:p)
     include Base
     def to_s;  "~#{p}"    end
-    def !@;     ~(!p)     end
-    def depth;  p.depth+1 end
   end
 
   class FORM < Struct.new(:vars, :ope)
@@ -124,18 +158,6 @@ module MagicLogic
     end
 
     def to_s; "(#{vars.map(&:to_s).join(_ ope, '|', '&')})" end
-
-    def !@
-      if is_or? && (and_form = vars.find { |var| var.is_and? })
-        and_form.vars.map { |a| a + FORM.new((vars - [and_form]), :+) }.inject(:*)
-      elsif are_there_neg?
-        is_or? ? $tout : $utout
-      else
-        vars.map(&:!).inject(ope)
-      end
-    end
-
-    def depth;       [p.depth, q.depth].max+1;     end
 
     def include?(p)
       vars.include?(p)

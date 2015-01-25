@@ -50,7 +50,7 @@ class TestMagicLogic < MiniTest::Unit::TestCase
     assert_to_s("(~P&~Q)",       ~($p + $q)      )
     assert_to_s("(~P|~Q)",       ~($p * $q)      )
     assert_to_s("P",             ~(~$p)          )
-    assert_to_s("((Q|P)&(R|P))", $p + ($q * $r)  )
+    assert_to_s("(P|(Q&R))",     $p + ($q * $r)  )
     assert_to_s("(P&Q&R)",       $p * ($q * $r)  )
     assert_to_s("(P&(~P|Q))",    $p * ($p >= $q) )
     assert_to_s("P",             (~$p >= $p)     )
