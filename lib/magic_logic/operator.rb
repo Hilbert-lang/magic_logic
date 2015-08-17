@@ -1,15 +1,15 @@
 module MagicLogic
   module Operator
-    [:+, :*].each do |ope|
+    [:|, :&].each do |ope|
       define_method(ope) do |q|
         case q
-        when Taut ; ope == :+ ? $tout : self
-        when UTaut; ope == :+ ? self  : $utout
+        when Taut ; ope == :| ? $tout : self
+        when UTaut; ope == :| ? self  : $utout
         when self ; self
         else
           if neg?(q)
-            ope == :+ ? $tout : $utout
-          elsif is_form?(ope.to_sym) && include?(q)
+            ope == :| ? $tout : $utout
+          elsif is_form?(ope) && include?(q)
             self
           elsif q.is_form?(ope) && q.include?(self)
             q
@@ -23,17 +23,17 @@ module MagicLogic
     def ~@
       case self
       when NEG;  p
-      when FORM; vars.map(&:~).inject(ope == :+ ? :* : :+)
+      when FORM; vars.map(&:~).inject(ope == :| ? :& : :|)
       else       NEG.new(self)
       end
     end
 
     def >=(q)
-      (~self + q)
+      (~self | q)
     end
 
     def <=>(q)
-      (self >= q) * (q >= self)
+      (self >= q) & (q >= self)
     end
   end
 end

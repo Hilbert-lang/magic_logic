@@ -10,11 +10,10 @@ module MagicLogic
     private_class_method :new
     $tout = new
     def ~@;   $utout end
-    def +(q); $tout  end
-    def *(q); q      end
+    def |(q); $tout  end
+    def &(q); q      end
     def to_s; 'TRUE' end
   end
-
 
   # Non Tautology
   class UTaut
@@ -22,8 +21,8 @@ module MagicLogic
     private_class_method :new
     $utout = new
     def ~@;   $tout   end
-    def +(q); q       end
-    def *(q); $utout  end
+    def |(q); q       end
+    def &(q); $utout  end
     def to_s; 'FALSE' end
   end
 
@@ -50,13 +49,13 @@ module MagicLogic
       self.ope = ope
     end
 
-    def to_s;        "(#{vars.map(&:to_s).join(ope == :+ ? '|' : '&')})" end
-    def include?(p); vars.include?(p)                              end
+    def to_s;        "(#{vars.map(&:to_s).join(ope.to_s)})" end
+    def include?(p); vars.include?(p)                       end
   end
 
   class ::Array
     def >>(con)
-      l = inject($tout) { |s, p| s * p } >= con
+      l = inject($tout) { |s, p| s & p } >= con
       case l.dpll
       when Taut  then 'TRUE'
       when UTaut then 'FALSE'

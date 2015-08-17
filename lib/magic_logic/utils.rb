@@ -19,7 +19,7 @@ module MagicLogic
       when Taut  then "(true)"
       when UTaut then "(false)"
       when Atom  then "(#{ATOM_PREFIX}#{$atoms.index(self)})"
-      when FORM  then "(#{vars.map(&:evl).join(ope == :+ ? '||' : '&&')})"
+      when FORM  then "(#{vars.map(&:evl).join(ope == :| ? '||' : '&&')})"
       when NEG   then "(!#{p.evl})"
       end
     end
