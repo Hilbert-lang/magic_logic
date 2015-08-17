@@ -3,24 +3,11 @@ module MagicLogic
     ATOM_PREFIX = "__ATOM__PREFIX__"
 
     def neg?(p)
-      (is_neg? && self.p == p) || (p.is_neg? && p.p == self)
+      (is_a?(NEG) && self.p == p) || (p.is_a?(NEG) && p.p == self)
     end
 
-    def is_neg?
-      is_a?(NEG)
-    end
-
-    def is_form?(ope=nil)
-      return is_a?(FORM) && self.ope == ope if ope
-      is_a?(FORM)
-    end
-
-    def is_or?
-      is_form?(:+)
-    end
-
-    def is_and?
-      is_form?(:*)
+    def is_form?(ope)
+      is_a?(FORM) && self.ope == ope
     end
 
     def include?(p)
@@ -32,7 +19,7 @@ module MagicLogic
       when Taut  then "(true)"
       when UTaut then "(false)"
       when Atom  then "(#{ATOM_PREFIX}#{$atoms.index(self)})"
-      when FORM  then "(#{vars.map(&:evl).join(_ ope, '||', '&&')})"
+      when FORM  then "(#{vars.map(&:evl).join(ope == :+ ? '||' : '&&')})"
       when NEG   then "(!#{p.evl})"
       end
     end
@@ -48,11 +35,10 @@ module MagicLogic
       when *[Taut, UTaut, Atom]
         self
       else
-        #TODO: refactor
         count = $atoms.count
         rslt = (1 .. 2 ** count).map do |i|
           s = evl
-          count.times { |j| s.sbst!(j, (i >> j) & 1 == 1)  }
+          count.times { |j| s.sbst!(j, (i >> j).odd?)  }
           eval(s)
         end
         case rslt.uniq

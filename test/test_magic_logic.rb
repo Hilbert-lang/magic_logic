@@ -1,6 +1,6 @@
 require 'minitest_helper'
 include MagicLogic
-class TestMagicLogic < MiniTest::Unit::TestCase
+class TestMagicLogic < Minitest::Test
   $p = P['P']
   $q = P['Q']
   $r = P['R']

@@ -7,35 +7,36 @@ module MagicLogic
   # Tautology
   class Taut
     include Base
+    private_class_method :new
+    $tout = new
     def ~@;   $utout end
     def +(q); $tout  end
     def *(q); q      end
     def to_s; 'TRUE' end
   end
-  $tout = Taut.new
+
 
   # Non Tautology
   class UTaut
     include Base
+    private_class_method :new
+    $utout = new
     def ~@;   $tout   end
     def +(q); q       end
     def *(q); $utout  end
     def to_s; 'FALSE' end
   end
-  $utout = UTaut.new
 
   class Atom < Struct.new(:p)
     include Base
+    $atoms = []
     def to_s;  p.to_s end
 
-    class << self
-      def [](x)
-        new(x).tap { |p| $atoms << p; $atoms.uniq! }
-      end
+    def self.[](x)
+      new(x).tap { |p| $atoms << p; $atoms.uniq! }
     end
   end
   P = Atom
-  $atoms = []
 
   class NEG < Struct.new(:p)
     include Base
@@ -49,7 +50,7 @@ module MagicLogic
       self.ope = ope
     end
 
-    def to_s;        "(#{vars.map(&:to_s).join(_ ope, '|', '&')})" end
+    def to_s;        "(#{vars.map(&:to_s).join(ope == :+ ? '|' : '&')})" end
     def include?(p); vars.include?(p)                              end
   end
 
@@ -64,4 +65,3 @@ module MagicLogic
     end
   end
 end
-include MagicLogic
